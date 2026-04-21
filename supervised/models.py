@@ -393,7 +393,14 @@ def Convolve(input: tensor, weight: tensor):
     weight_dimensions = weight.shape
     Output_Tensor = tensor(())
     "*** YOUR CODE HERE ***"
-    
+    y_dim = input_tensor_dimensions[0] - weight_dimensions[0] + 1
+    x_dim = input_tensor_dimensions[1] - weight_dimensions[1] + 1
+    Output_Tensor = torch.zeros((y_dim, x_dim))
+    for y in range(y_dim): 
+        for x in range(x_dim): 
+            Output_Tensor[y, x] = tensordot(input[y:y+weight_dimensions[0], x:x+weight_dimensions[1]], 
+                                                  weight, 
+                                                  dims=2)
     "*** End Code ***"
     return Output_Tensor
 
@@ -422,7 +429,9 @@ class DigitConvolutionalModel(Module):
         # 2 lines expected.
         # Set up a linear layer that takes input the result of 3x3 convolution applied to 28x28 input and an output size o
         # Set up an output Linear layer with input size o and output size 10
-
+        o = 256
+        self.conv_linear_layer = Sequential(Linear(26*26, o), ReLU())
+        self.linear_output_layer = Linear(o, output_size)
 
 
     def run(self, x):
@@ -438,6 +447,8 @@ class DigitConvolutionalModel(Module):
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
         # 2 lines expected. apply Relu to first hidden layer and then pass the output of that to the output_layer
+        x = self.conv_linear_layer(x)
+        return self.linear_output_layer(x)
 
     def get_loss(self, x, y):
         """
@@ -454,7 +465,7 @@ class DigitConvolutionalModel(Module):
         """
         """ YOUR CODE HERE """
         # 1 line expected
-     
+        return cross_entropy(self.forward(x), y)
         
 
     def train(self, dataset):
@@ -463,6 +474,20 @@ class DigitConvolutionalModel(Module):
         """
         """ YOUR CODE HERE """
         # about 12 lines 
+        dataloader = DataLoader(dataset, batch_size = 256, shuffle=True)
+        lr = 0.005
+        optimizer = optim.Adam(self.parameters(), lr=lr)
+        while True: 
+            for d in dataloader: 
+                optimizer.zero_grad()
+                x = d['x']
+                label = d['label']
+                loss = self.get_loss(x, label)
+                loss.backward()
+                optimizer.step()
+            # print("ACC", dataset.get_validation_accuracy())
+            if dataset.get_validation_accuracy() >= 0.83: 
+                break 
 
 
 class Attention(Module):
@@ -502,5 +527,6 @@ class Attention(Module):
 
         """YOUR CODE HERE"""
         # about 5 lines
+        
 
      
