@@ -106,7 +106,18 @@ class RegressionModel(Module):
         "*** YOUR CODE HERE ***"
         super().__init__()
         # 2-3 lines of code expected
-
+        hidden_size1 = 150
+        hidden_size2 = 200
+        hidden_size3 = 150
+        self.layers = Sequential(
+            Linear(in_features=1, out_features=hidden_size1), 
+            ReLU(), 
+            Linear(in_features=hidden_size1, out_features=hidden_size2), 
+            ReLU(), 
+            Linear(in_features=hidden_size2, out_features=hidden_size3),
+            ReLU(),  
+            Linear(in_features=hidden_size3, out_features=1)
+        )
 
     def forward(self, x):
         """
@@ -119,6 +130,7 @@ class RegressionModel(Module):
         """
         "*** YOUR CODE HERE ***"
         # 1 line of code expected
+        return self.layers(x)
     
     def get_loss(self, x, y):
         """
@@ -132,7 +144,7 @@ class RegressionModel(Module):
         """
         "*** YOUR CODE HERE ***"
         # 1 line of code expected
-        
+        return mse_loss(self.forward(x), y)
 
     def train(self, dataset):
         """
@@ -158,9 +170,26 @@ class RegressionModel(Module):
         #   - compute loss on (x,y) using get_loss
         #   - propagate loss backward
         #   - make the optimizer step to update parameters
-            
-
-
+        
+        batch_size = 128
+        dataloader = DataLoader(dataset, batch_size = batch_size, shuffle=True)
+        lr = 0.01
+        optimizer = optim.Adam(self.parameters(), lr=lr)
+        while True: 
+            total_loss = 0
+            num_batches = 0
+            for d in dataloader: 
+                optimizer.zero_grad()
+                x = d['x']
+                label = d['label']
+                loss = self.get_loss(x, label)
+                loss.backward()
+                total_loss += loss.item()
+                optimizer.step()
+                num_batches += 1
+            avg_loss = total_loss / num_batches 
+            if avg_loss < 0.005: 
+                break 
 
 
 
