@@ -216,7 +216,15 @@ class DigitClassificationModel(Module):
         output_size = 10
         "*** YOUR CODE HERE ***"
         # about 4 lines expected. consider two hidden layers
-
+        hidden_size1 = 256
+        hidden_size2 = 128
+        self.layers = Sequential(
+            Linear(input_size, hidden_size1), 
+            ReLU(), 
+            Linear(hidden_size1, hidden_size2), 
+            ReLU(), 
+            Linear(hidden_size2, output_size)
+        )
 
 
     def run(self, x):
@@ -235,6 +243,7 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # 1 line expected
+        return self.layers(x)
  
 
     def get_loss(self, x, y):
@@ -252,7 +261,7 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # use cross entropy loss. 1 line expected
-    
+        return cross_entropy(self.run(x), y)
         
 
     def train(self, dataset):
@@ -261,6 +270,21 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # 11-12 lines expected
+        dataloader = DataLoader(dataset, batch_size = 256, shuffle=True)
+        lr = 0.005
+        optimizer = optim.Adam(self.parameters(), lr=lr)
+        while True: 
+            for d in dataloader: 
+                optimizer.zero_grad()
+                x = d['x']
+                label = d['label']
+                loss = self.get_loss(x, label)
+                loss.backward()
+                optimizer.step()
+            # print("ACC", dataset.get_validation_accuracy())
+            if dataset.get_validation_accuracy() >= 0.98: 
+                break 
+
 
 
 class LanguageIDModel(Module):
