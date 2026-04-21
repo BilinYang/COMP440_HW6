@@ -527,6 +527,9 @@ class Attention(Module):
 
         """YOUR CODE HERE"""
         # about 5 lines
-        
+        K_QT_normalized = matmul(self.k_layer(input), self.q_layer(input).transpose(1, 2)) / (self.layer_size ** 0.5)
+        masked_K_QT_normalized = K_QT_normalized.masked_fill(self.mask[:,:,:T,:T] == 0, float('-inf'))
+        softmax_applied = softmax(masked_K_QT_normalized, dim=-1) 
+        return matmul(softmax_applied, self.v_layer(input))
 
      
