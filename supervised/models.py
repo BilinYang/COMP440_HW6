@@ -523,12 +523,12 @@ class Attention(Module):
         For the softmax activation, it should be applied to the last dimension of the input,
         Take a look at the "dim" argument of torch.nn.functional.softmax to figure out how to do this.
         """
-        B, T, C = input.size()
+        *_, T, C = input.size()
 
         """YOUR CODE HERE"""
         # about 5 lines
-        K_QT_normalized = matmul(self.k_layer(input), self.q_layer(input).transpose(1, 2)) / (self.layer_size ** 0.5)
-        masked_K_QT_normalized = K_QT_normalized.masked_fill(self.mask[:,:,:T,:T] == 0, float('-inf'))
+        K_QT_normalized = matmul(self.k_layer(input), self.q_layer(input).transpose(-2, -1)) / (self.layer_size ** 0.5)
+        masked_K_QT_normalized = K_QT_normalized.masked_fill(self.mask[0,0,:T,:T] == 0, float('-inf'))
         softmax_applied = softmax(masked_K_QT_normalized, dim=-1) 
         return matmul(softmax_applied, self.v_layer(input))
 
