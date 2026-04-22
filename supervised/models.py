@@ -219,6 +219,14 @@ class DigitClassificationModel(Module):
         output_size = 10
         "*** YOUR CODE HERE ***"
         # about 4 lines expected. consider two hidden layers
+        hidden_layer1_size = 128
+        hidden_layer2_size = 256
+        self.layers = Sequential(
+            Linear(input_size, hidden_layer1_size),
+            ReLU(),
+            Linear(hidden_layer1_size, hidden_layer2_size),
+            ReLU(),
+            Linear(hidden_layer2_size, output_size))
 
 
 
@@ -238,6 +246,7 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # 1 line expected
+        return self.layers(x)
  
 
     def get_loss(self, x, y):
@@ -255,6 +264,7 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # use cross entropy loss. 1 line expected
+        return cross_entropy(self.layers(x), y)
     
         
 
@@ -264,6 +274,29 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # 11-12 lines expected
+        # remember to set up a data loader and optimizer (Adam with a suitable learning rate)
+        # until training loss > 0.01
+        # loop over batches:
+        #   - zero out gradient
+        #   - get x,y from batch
+        #   - compute loss on (x,y) using get_loss
+        #   - propagate loss backward
+        #   - make the optimizer step to update parameters
+        dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=0.001)
+
+        
+        while True:
+            for batch in dataloader:
+                x = batch['x']
+                y = batch['label']
+                optimizer.zero_grad()
+                loss = self.get_loss(x, y)
+                loss.backward()
+                optimizer.step()
+            if dataset.get_validation_accuracy() >= 0.98:
+                break 
+        
 
 
 class LanguageIDModel(Module):
