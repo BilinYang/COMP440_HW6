@@ -38,7 +38,8 @@ class PerceptronModel(Module):
         super(PerceptronModel, self).__init__()
         
         "*** YOUR CODE HERE ***"
-        self.w = Parameter(torch.ones(1, dimensions))
+        # 1 line expected
+        self.w = Parameter(ones(1,dimensions))
         
 
     def get_weights(self):
@@ -58,7 +59,8 @@ class PerceptronModel(Module):
         The pytorch function `tensordot` may be helpful here.
         """
         "*** YOUR CODE HERE ***"
-        return torch.tensordot(self.get_weights(), x, dims=([1], [1]))[0]
+        # 1 line expected
+        return tensordot(self.w, x)
 
     def get_prediction(self, x):
         """
@@ -67,7 +69,11 @@ class PerceptronModel(Module):
         Returns: 1 or -1
         """
         "*** YOUR CODE HERE ***"
-        return 1 if self.run(x)[0] >= 0 else -1 
+        # 1 line expected
+        if tensordot(self.w, x) < 0:
+            return -1
+        else:
+            return 1
 
 
     def train(self, dataset):
@@ -83,16 +89,17 @@ class PerceptronModel(Module):
             dataloader = DataLoader(dataset, batch_size=1, shuffle=True)
             "*** YOUR CODE HERE ***"
             # 10-11 lines expected
-            while True: 
+            while True:
                 mistakes = 0
-                for f in dataloader: 
-                    feature, label = f['x'], f['label']
-                    ypred = self.get_prediction(feature)
-                    if ypred != label: 
+                for batch in dataloader:
+                    x = batch['x']
+                    y = batch['label']
+                    ypred = self.get_prediction(x)
+                    if ypred != y:
                         mistakes += 1
-                        self.w += feature * label
-                if mistakes == 0: 
-                    break 
+                        self.w += x * y
+                if mistakes == 0:
+                    break
 
 
 class RegressionModel(Module):
@@ -106,18 +113,13 @@ class RegressionModel(Module):
         "*** YOUR CODE HERE ***"
         super().__init__()
         # 2-3 lines of code expected
-        hidden_size1 = 150
-        hidden_size2 = 200
-        hidden_size3 = 150
+        hidden_layer1_size = 500
         self.layers = Sequential(
-            Linear(in_features=1, out_features=hidden_size1), 
-            ReLU(), 
-            Linear(in_features=hidden_size1, out_features=hidden_size2), 
-            ReLU(), 
-            Linear(in_features=hidden_size2, out_features=hidden_size3),
-            ReLU(),  
-            Linear(in_features=hidden_size3, out_features=1)
-        )
+            Linear(in_features=1, out_features=hidden_layer1_size), 
+            ReLU(),
+            Linear(hidden_layer1_size, 1))
+
+
 
     def forward(self, x):
         """
@@ -145,6 +147,7 @@ class RegressionModel(Module):
         "*** YOUR CODE HERE ***"
         # 1 line of code expected
         return mse_loss(self.forward(x), y)
+        
 
     def train(self, dataset):
         """
@@ -170,26 +173,26 @@ class RegressionModel(Module):
         #   - compute loss on (x,y) using get_loss
         #   - propagate loss backward
         #   - make the optimizer step to update parameters
-        
-        batch_size = 128
-        dataloader = DataLoader(dataset, batch_size = batch_size, shuffle=True)
-        lr = 0.01
-        optimizer = optim.Adam(self.parameters(), lr=lr)
-        while True: 
-            total_loss = 0
-            num_batches = 0
-            for d in dataloader: 
+        dataloader = DataLoader(dataset, batch_size=8, shuffle=True)
+        optimizer = optim.Adam(self.parameters(), lr=0.001)
+
+        while True:
+            total_loss = 0.0
+            for batch in dataloader:
+                x = batch['x']
+                y = batch['label']
                 optimizer.zero_grad()
-                x = d['x']
-                label = d['label']
-                loss = self.get_loss(x, label)
+                loss = self.get_loss(x, y)
                 loss.backward()
-                total_loss += loss.item()
                 optimizer.step()
-                num_batches += 1
-            avg_loss = total_loss / num_batches 
-            if avg_loss < 0.005: 
+                total_loss += loss.item()
+            avg_loss = total_loss / len(dataloader)
+            if avg_loss <= 0.02:
                 break 
+
+            
+
+
 
 
 
@@ -216,15 +219,7 @@ class DigitClassificationModel(Module):
         output_size = 10
         "*** YOUR CODE HERE ***"
         # about 4 lines expected. consider two hidden layers
-        hidden_size1 = 256
-        hidden_size2 = 128
-        self.layers = Sequential(
-            Linear(input_size, hidden_size1), 
-            ReLU(), 
-            Linear(hidden_size1, hidden_size2), 
-            ReLU(), 
-            Linear(hidden_size2, output_size)
-        )
+
 
 
     def run(self, x):
@@ -243,7 +238,6 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # 1 line expected
-        return self.layers(x)
  
 
     def get_loss(self, x, y):
@@ -261,7 +255,7 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # use cross entropy loss. 1 line expected
-        return cross_entropy(self.run(x), y)
+    
         
 
     def train(self, dataset):
@@ -270,21 +264,6 @@ class DigitClassificationModel(Module):
         """
         """ YOUR CODE HERE """
         # 11-12 lines expected
-        dataloader = DataLoader(dataset, batch_size = 256, shuffle=True)
-        lr = 0.005
-        optimizer = optim.Adam(self.parameters(), lr=lr)
-        while True: 
-            for d in dataloader: 
-                optimizer.zero_grad()
-                x = d['x']
-                label = d['label']
-                loss = self.get_loss(x, label)
-                loss.backward()
-                optimizer.step()
-            # print("ACC", dataset.get_validation_accuracy())
-            if dataset.get_validation_accuracy() >= 0.98: 
-                break 
-
 
 
 class LanguageIDModel(Module):
@@ -393,14 +372,7 @@ def Convolve(input: tensor, weight: tensor):
     weight_dimensions = weight.shape
     Output_Tensor = tensor(())
     "*** YOUR CODE HERE ***"
-    y_dim = input_tensor_dimensions[0] - weight_dimensions[0] + 1
-    x_dim = input_tensor_dimensions[1] - weight_dimensions[1] + 1
-    Output_Tensor = torch.zeros((y_dim, x_dim))
-    for y in range(y_dim): 
-        for x in range(x_dim): 
-            Output_Tensor[y, x] = tensordot(input[y:y+weight_dimensions[0], x:x+weight_dimensions[1]], 
-                                                  weight, 
-                                                  dims=2)
+    
     "*** End Code ***"
     return Output_Tensor
 
@@ -429,9 +401,7 @@ class DigitConvolutionalModel(Module):
         # 2 lines expected.
         # Set up a linear layer that takes input the result of 3x3 convolution applied to 28x28 input and an output size o
         # Set up an output Linear layer with input size o and output size 10
-        o = 256
-        self.conv_linear_layer = Sequential(Linear(26*26, o), ReLU())
-        self.linear_output_layer = Linear(o, output_size)
+
 
 
     def run(self, x):
@@ -447,8 +417,6 @@ class DigitConvolutionalModel(Module):
         x = x.flatten(start_dim=1)
         """ YOUR CODE HERE """
         # 2 lines expected. apply Relu to first hidden layer and then pass the output of that to the output_layer
-        x = self.conv_linear_layer(x)
-        return self.linear_output_layer(x)
 
     def get_loss(self, x, y):
         """
@@ -465,7 +433,7 @@ class DigitConvolutionalModel(Module):
         """
         """ YOUR CODE HERE """
         # 1 line expected
-        return cross_entropy(self.forward(x), y)
+     
         
 
     def train(self, dataset):
@@ -474,20 +442,6 @@ class DigitConvolutionalModel(Module):
         """
         """ YOUR CODE HERE """
         # about 12 lines 
-        dataloader = DataLoader(dataset, batch_size = 256, shuffle=True)
-        lr = 0.005
-        optimizer = optim.Adam(self.parameters(), lr=lr)
-        while True: 
-            for d in dataloader: 
-                optimizer.zero_grad()
-                x = d['x']
-                label = d['label']
-                loss = self.get_loss(x, label)
-                loss.backward()
-                optimizer.step()
-            # print("ACC", dataset.get_validation_accuracy())
-            if dataset.get_validation_accuracy() >= 0.83: 
-                break 
 
 
 class Attention(Module):
@@ -523,13 +477,9 @@ class Attention(Module):
         For the softmax activation, it should be applied to the last dimension of the input,
         Take a look at the "dim" argument of torch.nn.functional.softmax to figure out how to do this.
         """
-        *_, T, C = input.size()
+        B, T, C = input.size()
 
         """YOUR CODE HERE"""
         # about 5 lines
-        K_QT_normalized = matmul(self.k_layer(input), self.q_layer(input).transpose(-2, -1)) / (self.layer_size ** 0.5)
-        masked_K_QT_normalized = K_QT_normalized.masked_fill(self.mask[0,0,:T,:T] == 0, float('-inf'))
-        softmax_applied = softmax(masked_K_QT_normalized, dim=-1) 
-        return matmul(softmax_applied, self.v_layer(input))
 
      
